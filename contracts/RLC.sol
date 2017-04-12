@@ -11,7 +11,7 @@ contract RLC is ERC20, SafeMath, Ownable {
   string public name;       //fancy name
   string public symbol;
   uint8 public decimals;    //How many decimals to show.
-  string public version = 'v0.1'; 
+  string public version = 'v0.1';
   uint256 public initialSupply;
   uint256 public totalSupply;
   bool public locked;
@@ -37,9 +37,9 @@ contract RLC is ERC20, SafeMath, Ownable {
 
     initialSupply = 87000000000000000;
     totalSupply = initialSupply;
-    balances[msg.sender] = initialSupply;// Give the creator all initial tokens                    
-    name = 'iEx.ec Network Token';        // Set the name for display purposes     
-    symbol = 'RLC';                       // Set the symbol for display purposes  
+    balances[msg.sender] = initialSupply;// Give the creator all initial tokens
+    name = 'iEx.ec Network Token';        // Set the name for display purposes
+    symbol = 'RLC';                       // Set the symbol for display purposes
     decimals = 9;                        // Amount of decimals for display purposes
   }
 
@@ -55,7 +55,7 @@ contract RLC is ERC20, SafeMath, Ownable {
   }
 
   function transfer(address _to, uint _value) onlyUnlocked returns (bool success) {
-    balances[msg.sender] = safeSub(balances[msg.sender], _value);
+    balances[owner] = safeSub(balances[owner], _value);
     balances[_to] = safeAdd(balances[_to], _value);
     Transfer(msg.sender, _to, _value);
     return true;
@@ -63,7 +63,7 @@ contract RLC is ERC20, SafeMath, Ownable {
 
   function transferFrom(address _from, address _to, uint _value) onlyUnlocked returns (bool success) {
     var _allowance = allowed[_from][msg.sender];
-    
+
     balances[_to] = safeAdd(balances[_to], _value);
     balances[_from] = safeSub(balances[_from], _value);
     allowed[_from][msg.sender] = safeSub(_allowance, _value);
@@ -82,7 +82,7 @@ contract RLC is ERC20, SafeMath, Ownable {
   }
 
     /* Approve and then comunicate the approved contract in a single tx */
-  function approveAndCall(address _spender, uint256 _value, bytes _extraData, bytes _extraData2){    
+  function approveAndCall(address _spender, uint256 _value, bytes _extraData, bytes _extraData2){
       TokenSpender spender = TokenSpender(_spender);
       if (approve(_spender, _value)) {
           spender.receiveApproval(msg.sender, _value, this, _extraData, _extraData2);
@@ -92,7 +92,7 @@ contract RLC is ERC20, SafeMath, Ownable {
   function allowance(address _owner, address _spender) constant returns (uint remaining) {
     return allowed[_owner][_spender];
   }
-  
+
     /* This unnamed function is called whenever someone tries to send ether to it */
     function () {
         throw;     // Prevents accidental sending of ether
