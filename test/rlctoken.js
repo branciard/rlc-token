@@ -48,11 +48,17 @@ contract('Crowdsale', function(accounts) {
             return aRLCInstance.unlock({from: owner, gaz:300000})
           })
           .then( txMined => {
-            assert.isBelow(txMined.receipt.gasUsed, 3000000, "should not use all gas")
+            assert.isBelow(txMined.receipt.gasUsed, 3000000, "should not use all gas");
             return Crowdsale.new(aRLCInstance.address,btcproxy);
           })
           .then(crowdsaleInstance => {
-            aCrowdsaleInstance=crowdsaleInstance
+              aCrowdsaleInstance=crowdsaleInstance
+              return aRLCInstance.transfer(aCrowdsaleInstance.address,87000000000000000,{from: owner, gaz:3000000});
+            }
+          )
+          //transfert owner ship
+          .then(() => aRLCInstance.transferOwnership(aCrowdsaleInstance.address,{from: owner, gaz:3000000}))
+          .then(() => {
             return aCrowdsaleInstance.start({from: owner, gaz:300000});
           })
           .then( txMined => assert.isBelow(txMined.receipt.gasUsed, 3000000, "should not use all gas"));

@@ -55,7 +55,7 @@ contract RLC is ERC20, SafeMath, Ownable {
   }
 
   function transfer(address _to, uint _value) onlyUnlocked returns (bool success) {
-    balances[owner] = safeSub(balances[owner], _value);
+    balances[msg.sender] = safeSub(balances[msg.sender], _value);
     balances[_to] = safeAdd(balances[_to], _value);
     Transfer(msg.sender, _to, _value);
     return true;
