@@ -69,8 +69,6 @@ contract('Crowdsale', function(accounts) {
            .then( balance  => assert.strictEqual(balance.toString(10), '0', "contract should have 0 balance at start"));
       });
 
-
-
       it("TEST 0 : normal use case with receiveETH call ", function() {
            return aRLCInstance.balanceOf.call(backer1)
               .then( rlcbalance  => {
@@ -141,29 +139,57 @@ contract('Crowdsale', function(accounts) {
       });
 
       it("TEST C : backer 1 is a bad guy ...backer 1 try to trick the address", function() {
-           return Promise.all([ aRLCInstance.balanceOf.call(backer1), aRLCInstance.balanceOf.call(backer1+10)])
+        var trickIt=111111111111111111111;
+           return Promise.all([ aRLCInstance.balanceOf.call(backer1), aRLCInstance.balanceOf.call(backer1+trickIt)])
               .then( rlcbalances  => {
                 assert.strictEqual(rlcbalances[0].toString(10), '0', "backer1 should have 0 balance at start");
                 assert.strictEqual(rlcbalances[0].toString(10), '0', "backer2 should have 0 balance at start");
-               return aCrowdsaleInstance.receiveETH(backer1+10,{ from : backer1,value: web3.toWei(1, "ether"), gaz:4712389 });
+               return aCrowdsaleInstance.receiveETH(backer1+trickIt,{ from : backer1,value: web3.toWei(1, "ether"), gaz:4712389 });
               })
            .then( txMined => {
+             //console.log(txMined);
               assert.isBelow(txMined.receipt.gasUsed, 4712389, "should not use all gas");
               return Promise.all([
                         web3.eth.getBalancePromise(aCrowdsaleInstance.address),
                         aRLCInstance.balanceOf.call(backer1),
-                        aRLCInstance.balanceOf.call(backer1+10)
+                        aRLCInstance.balanceOf.call(backer1+trickIt)
                       ]);
            })
            .then( balances  => {
              assert.strictEqual(balances[0].toString(10), web3.toWei(1, "ether").toString(10), "contract should have 1 ether balance ");
              assert.strictEqual(balances[1].toString(10), "0" , "backer1 should have no RLC");
-             assert.strictEqual(balances[2].toString(10), "240000000000" , "backer1+10 have some RLC now");
+             assert.strictEqual(balances[2].toString(10), "240000000000" , "backer1+trickIt have some RLC now");
             }
            );
       });
 
 
+            it("TEST D : whitening ether and RLC totalSupply not change by sending to beneficiary : aCrowdsaleInstance.address", function() {
+                 return Promise.all([ aRLCInstance.balanceOf.call(backer1), aRLCInstance.balanceOf.call(aCrowdsaleInstance.address),aCrowdsaleInstance.rlc_team.call()])
+                    .then( rlcbalances  => {
+                      assert.strictEqual(rlcbalances[0].toString(10), '0', "backer1 should have 0 RLC balance at start");
+                      assert.strictEqual(rlcbalances[1].toString(10), '87000000000000000', "aCrowdsaleInstance.address should have 87000000000000000 RLC balance at start");
+                      assert.strictEqual(rlcbalances[2].toString(10), "12000000000000000" , "rlc_team amount");
+                     return aCrowdsaleInstance.receiveETH(aCrowdsaleInstance.address,{ from : backer1,value: web3.toWei(1, "ether"), gaz:4712389 });
+                    })
+                 .then( txMined => {
+                    assert.isBelow(txMined.receipt.gasUsed, 4712389, "should not use all gas");
+                    return Promise.all([
+                              web3.eth.getBalancePromise(aCrowdsaleInstance.address),
+                              aRLCInstance.balanceOf.call(backer1),
+                              aRLCInstance.balanceOf.call(aCrowdsaleInstance.address),
+                              aCrowdsaleInstance.rlc_team.call(),
+                              aCrowdsaleInstance.RLCSentToETH.call()
+                            ]);
+                 })
+                 .then( balances  => {
+                   assert.strictEqual(balances[0].toString(10), web3.toWei(1, "ether").toString(10), "contract should have 6 ether balance ");
+                   assert.strictEqual(balances[1].toString(10), "0" , "backer1  RLC");
+                   assert.strictEqual(balances[2].toString(10), "87000000000000000" , "aCrowdsaleInstance.address same as start");
+                   assert.strictEqual(balances[4].toString(10), "240000000000" , "RLCSentToETH amount will be burn ...");
+                  }
+                 );
+            });
 
     });
 
