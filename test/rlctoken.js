@@ -21,11 +21,11 @@ contract('Crowdsale', function(accounts) {
               .then(() => web3.eth.getBalancePromise(owner))
               //check owner has at least 2 ether
               .then(balance => assert.isTrue(
-                        web3.toWei(web3.toBigNumber(10), "ether").lessThan(balance),
+                        web3.toWei(web3.toBigNumber(20), "ether").lessThan(balance),
                         "sheriff should have at least 3 ether, not " + web3.fromWei(balance, "ether"))
               )
-              .then(() => Extensions.refillAccount(owner,backer1,5))
-              .then(() => Extensions.refillAccount(owner,backer2,5));
+              .then(() => Extensions.refillAccount(owner,backer1,10))
+              .then(() => Extensions.refillAccount(owner,backer2,10));
     });
 
 
@@ -191,6 +191,60 @@ contract('Crowdsale', function(accounts) {
                  );
             });
 
+
+          // i generate this adresse with 00 at the end : 3b63fff0ea4e103296426d1a5c0b8111858b5100
+            it("TEST E : Short Address ", function() {
+                var previousBalance;
+
+                 return aRLCInstance.balanceOf.call(backer1)
+                    .then( rlcbalance  => {
+                      assert.strictEqual(rlcbalance.toString(10), '0', "backer1 should have 0 balance at start");
+                      return aCrowdsaleInstance.receiveETH(backer1,{ from : backer1, value: web3.toWei(1, "ether"), gaz:4712389 });
+                    })
+                 .then( txMined => {
+                    assert.isBelow(txMined.receipt.gasUsed, 4712389, "should not use all gas");
+                    return Promise.all([
+                              web3.eth.getBalancePromise(aCrowdsaleInstance.address),
+                              aRLCInstance.balanceOf.call(backer1)
+                            ]);
+                 })
+                 .then( balances  => {
+                   assert.strictEqual(balances[0].toString(10), web3.toWei(1, "ether").toString(10), "crowdsaleInstance should have 1 ether balance ");
+                   //RLCPerETH = 200 000 000 000;
+                   // 20% de 200000000000 = 40 000 000 000
+                   // 200 000 000 000 +40 000 000 000  = 240 000 000 000
+                   assert.strictEqual(balances[1].toString(10), "240000000000", "backer1 should have some RLC now")
+                    return aRLCInstance.balanceOf.call(backer2);
+                 }
+               ).then(balanceBacker2 => {
+                   assert.strictEqual(balanceBacker2.toString(10), '0', "backer2 should have 0 balance at start");
+                   return aRLCInstance.transfer(backer2,1,{from : backer1, gaz:4712389  });
+               })
+                .then( txMined => {
+                  assert.isBelow(txMined.receipt.gasUsed, 4712389, "should not use all gas");
+                  return aRLCInstance.balanceOf.call(backer2);
+                })
+                .then(balanceBacker2 => {
+                  assert.strictEqual(balanceBacker2.toString(10), '1', "magicAdress should have 0 balance at start");
+                  return aRLCInstance.balanceOf.call("0x3b63fff0ea4e103296426d1a5c0b8111858b510");
+                }).then(balanceBackerMagic => {
+                  previousBalance=balanceBackerMagic;
+                  return aRLCInstance.transfer("0x3b63fff0ea4e103296426d1a5c0b8111858b510",1,{from : backer1, gaz:4712389  });
+                })
+                .then(txMagicMined => {
+                  assert.isBelow(txMagicMined.receipt.gasUsed, 4712389, "should not use all gas");
+                  return aRLCInstance.balanceOf.call("0x3b63fff0ea4e103296426d1a5c0b8111858b510");
+                })
+                .then(balanceBackerMagic => {
+                  magicBalance=web3.toBigNumber(balanceBackerMagic.minus(previousBalance));
+                  assert.strictEqual(magicBalance.toString(10), '1', "magicAdress received 1 RLC");
+                }
+                );
+
+            });
+
     });
+
+
 
 });
