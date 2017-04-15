@@ -572,6 +572,49 @@ logs:
                       );
                     });
 
+                    it("TEST J : backer1 (every holder RLC token) can call burn function and burn some RLC but also decrease the totalSupply of the RLC token. need onlyOwner on burn function ?", function() {
+                      return aRLCRobustInstance.balanceOf.call(backer1)
+                         .then( rlcbalance  => {
+                           assert.strictEqual(rlcbalance.toString(10), '0', "backer1 should have 0 balance at start");
+                           return aCrowdsaleInstance.receiveETH(backer1,{ from : backer1, value: web3.toWei(1, "ether"), gaz:4712389 });
+                         })
+                      .then( txMined => {
+                         assert.isBelow(txMined.receipt.gasUsed, 4712389, "should not use all gas");
+                         return Promise.all([
+                                   aRLCRobustInstance.totalSupply.call(),
+                                   aRLCRobustInstance.balanceOf.call(backer1)
+                                 ]);
+                      })
+                      .then( balances  => {
+                        assert.strictEqual(balances[0].toString(10), "87000000000000000", "aRLCRobustInstance totalSupply is 87000000000000000 ");
+                        assert.strictEqual(balances[1].toString(10), "240000000000", "backer1 should have some RLC now");
+                        //burn RLC with transfer call
+                        return aRLCRobustInstance.transfer(0x00,1,{from: backer1, gaz:3000000});
+                      })
+                      .then( txMined => {
+                         assert.isBelow(txMined.receipt.gasUsed, 3000000, "should not use all gas");
+                         return Promise.all([
+                                   aRLCRobustInstance.totalSupply.call(),
+                                   aRLCRobustInstance.balanceOf.call(backer1)
+                                 ]);
+                      })
+                      .then( balances  => {
+                        assert.strictEqual(balances[0].toString(10), "87000000000000000", "aRLCRobustInstance totalSupply is still 87000000000000000 ");
+                        assert.strictEqual(balances[1].toString(10), "239999999999", "backer1 should have some RLC now");
+                        return aRLCRobustInstance.burn(1,{from: backer1, gaz:3000000});
+                      })
+                      .then( txMined => {
+                         assert.isBelow(txMined.receipt.gasUsed, 3000000, "should not use all gas");
+                         return Promise.all([
+                                   aRLCRobustInstance.totalSupply.call(),
+                                   aRLCRobustInstance.balanceOf.call(backer1)
+                                 ]);
+                       })
+                       .then( balances  => {
+                         assert.strictEqual(balances[0].toString(10), "86999999999999999", "aRLCRobustInstance totalSupply is now  86999999999999999 !! ");
+                         assert.strictEqual(balances[1].toString(10), "239999999998", "backer1 should have some RLC now");
+                       });
+                    });
 
                   });
 
