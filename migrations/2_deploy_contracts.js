@@ -1,4 +1,5 @@
 var RLC = artifacts.require("./RLC.sol");
+var RLCRobust = artifacts.require("./RLCRobust.sol");
 var Crowdsale = artifacts.require("./Crowdsale.sol");
 
 
